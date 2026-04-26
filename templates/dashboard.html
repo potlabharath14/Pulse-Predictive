@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Pulse Predictive</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <span class="material-icons-round nav-logo-icon">monitor_heart</span>
+            <span class="nav-brand">Pulse Predictive</span>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('home') }}" class="nav-link">
+                <span class="material-icons-round">home</span> Home
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="nav-link active">
+                <span class="material-icons-round">dashboard</span> Dashboard
+            </a>
+            <a href="{{ url_for('logout') }}" class="nav-link nav-user">
+                <span class="material-icons-round">account_circle</span> {{ current_user.username }}
+            </a>
+        </div>
+    </nav>
+
+    <div class="background-effects">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="main-content dashboard-layout">
+        <!-- Stats Row -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <span class="material-icons-round stat-icon" style="color: #6366f1;">assignment</span>
+                <div class="stat-info">
+                    <span class="stat-number">{{ history|length }}</span>
+                    <span class="stat-label">Total Tests</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="material-icons-round stat-icon" style="color: #22c55e;">check_circle</span>
+                <div class="stat-info">
+                    <span class="stat-number">{{ history|selectattr('risk_class', 'equalto', 'success')|list|length }}</span>
+                    <span class="stat-label">Normal</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="material-icons-round stat-icon" style="color: #f59e0b;">warning</span>
+                <div class="stat-info">
+                    <span class="stat-number">{{ history|selectattr('risk_class', 'equalto', 'warning')|list|length }}</span>
+                    <span class="stat-label">Stage 1</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="material-icons-round stat-icon" style="color: #ef4444;">dangerous</span>
+                <div class="stat-info">
+                    <span class="stat-number">{{ (history|selectattr('risk_class', 'equalto', 'danger')|list|length) + (history|selectattr('risk_class', 'equalto', 'crisis')|list|length) }}</span>
+                    <span class="stat-label">Stage 2 / Crisis</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        {% if history|length > 0 %}
+        <div class="charts-row">
+            <div class="chart-card">
+                <h3><span class="material-icons-round">show_chart</span> Confidence Trend</h3>
+                <canvas id="confidenceChart"></canvas>
+            </div>
+            <div class="chart-card chart-card-small">
+                <h3><span class="material-icons-round">donut_large</span> Stage Distribution</h3>
+                <canvas id="stagePieChart"></canvas>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- History Cards -->
+        <div class="section-header">
+            <h2><span class="material-icons-round">history</span> Prediction History</h2>
+        </div>
+
+        {% if history|length == 0 %}
+        <div class="empty-state">
+            <span class="material-icons-round empty-icon">science</span>
+            <h3>No predictions yet</h3>
+            <p>Head to the home page and run your first analysis!</p>
+            <a href="{{ url_for('home') }}" class="action-btn btn-retest" style="margin-top:1rem;">
+                <span class="material-icons-round">add</span> New Prediction
+            </a>
+        </div>
+        {% else %}
+        <div class="history-grid">
+            {% for item in history %}
+            <div class="history-card hcard-{{ item.risk_class }}">
+                <div class="hcard-top">
+                    <div class="hcard-date">
+                        <span class="material-icons-round">calendar_today</span>
+                        {{ item.date.strftime('%d %b %Y') }}
+                    </div>
+                    <div class="risk-badge badge-{{ item.risk_class }}">
+                        {% if item.risk_class == 'crisis' %}🚨{% elif item.risk_class == 'danger' %}🔴{% elif item.risk_class == 'warning' %}🟡{% else %}🟢{% endif %}
+                        {{ item.risk_label }}
+                    </div>
+                </div>
+                <div class="hcard-body">
+                    <div class="hcard-metric">
+                        <span class="metric-label">Systolic</span>
+                        <span class="metric-value">{{ item.Systolic }}</span>
+                    </div>
+                    <div class="hcard-metric">
+                        <span class="metric-label">Diastolic</span>
+                        <span class="metric-value">{{ item.Diastolic }}</span>
+                    </div>
+                    <div class="hcard-metric">
+                        <span class="metric-label">Confidence</span>
+                        <span class="metric-value">{{ item.confidence }}%</span>
+                    </div>
+                </div>
+                <div class="hcard-actions">
+                    <a href="{{ url_for('download_pdf', pred_id=item._id|string) }}" class="action-btn btn-pdf btn-sm">
+                        <span class="material-icons-round">picture_as_pdf</span> Report
+                    </a>
+                    <a href="{{ url_for('delete_prediction', pred_id=item._id|string) }}" class="action-btn btn-delete btn-sm" onclick="return confirm('Delete this prediction?')">
+                        <span class="material-icons-round">delete</span> Delete
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    {% if history|length > 0 %}
+    <script>
+        fetch('{{ url_for("chart_data") }}')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                // Confidence Trend
+                var ctx = document.getElementById('confidenceChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Confidence %',
+                            data: data.confidence,
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#6366f1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { labels: { color: '#e2e8f0', font: { family: 'Outfit' } } } },
+                        scales: {
+                            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, min: 0, max: 100 }
+                        }
+                    }
+                });
+
+                // Stage Distribution Pie
+                var dist = data.distribution;
+                var pieLabels = Object.keys(dist);
+                var pieData = Object.values(dist);
+                var pieColors = pieLabels.map(function(l) {
+                    if (l.indexOf('Crisis') !== -1) return '#dc2626';
+                    if (l.indexOf('Stage 2') !== -1) return '#ef4444';
+                    if (l.indexOf('Stage 1') !== -1) return '#f59e0b';
+                    return '#22c55e';
+                });
+
+                var pieCtx = document.getElementById('stagePieChart').getContext('2d');
+                new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: pieLabels,
+                        datasets: [{ data: pieData, backgroundColor: pieColors, borderColor: '#0f0f1a', borderWidth: 3 }]
+                    },
+                    options: {
+                        responsive: true,
+                        cutout: '65%',
+                        plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0', font: { family: 'Outfit' }, padding: 15 } } }
+                    }
+                });
+            });
+    </script>
+    {% endif %}
+</body>
+</html>

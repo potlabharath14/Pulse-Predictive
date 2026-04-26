@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulse Predictive — Hypertension Analysis</title>
+    <meta name="description" content="AI-powered hypertension stage prediction with explainable SHAP analysis">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- ─── Navigation ─── -->
+    <nav class="top-nav">
+        <div class="nav-left">
+            <span class="material-icons-round nav-logo-icon">monitor_heart</span>
+            <span class="nav-brand">Pulse Predictive</span>
+        </div>
+        <div class="nav-links">
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('home') }}" class="nav-link active">
+                <span class="material-icons-round">home</span> Home
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="nav-link">
+                <span class="material-icons-round">dashboard</span> Dashboard
+            </a>
+            <a href="{{ url_for('logout') }}" class="nav-link nav-user">
+                <span class="material-icons-round">account_circle</span> {{ current_user.username }}
+            </a>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="nav-link">
+                <span class="material-icons-round">login</span> Login
+            </a>
+            <a href="{{ url_for('register') }}" class="nav-link nav-cta">
+                <span class="material-icons-round">person_add</span> Register
+            </a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- ─── Loading Overlay ─── -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="pulse-loader">
+                <div class="pulse-ring"></div>
+                <span class="material-icons-round pulse-icon">monitor_heart</span>
+            </div>
+            <p class="loading-text">Analyzing health data<span class="loading-dots"></span></p>
+            <p class="loading-sub">Running ML model + SHAP analysis</p>
+        </div>
+    </div>
+
+    <div class="background-effects">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="main-content">
+        <div class="card-container">
+            <div class="branding">
+                <span class="brand-badge">AI-POWERED DIAGNOSTICS</span>
+                <h1>Hypertension <span class="accent-glow">Stage Predictor</span></h1>
+                <p>Enter your clinical parameters for AI-driven hypertension staging</p>
+            </div>
+
+            <form id="predictForm" action="{{ url_for('predict') }}" method="POST">
+                <!-- Row 1: Demographics -->
+                <div class="form-section-title">
+                    <span class="material-icons-round">person</span> Demographics
+                </div>
+                <div class="input-grid">
+                    <div class="field-container">
+                        <label for="gender"><span class="material-icons-round field-icon">wc</span> Gender</label>
+                        <select id="gender" name="gender" required>
+                            <option value="" disabled selected>Select gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                    <div class="field-container">
+                        <label for="age"><span class="material-icons-round field-icon">cake</span> Age Group</label>
+                        <select id="age" name="age" required>
+                            <option value="" disabled selected>Select age range</option>
+                            <option value="18-34">18 – 34</option>
+                            <option value="35-50">35 – 50</option>
+                            <option value="51-64">51 – 64</option>
+                            <option value="65+">65+</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Row 2: Medical History -->
+                <div class="form-section-title">
+                    <span class="material-icons-round">history</span> Medical History
+                </div>
+                <div class="input-grid">
+                    <div class="field-container">
+                        <label for="history"><span class="material-icons-round field-icon">family_restroom</span> Family History</label>
+                        <select id="history" name="history" required>
+                            <option value="" disabled selected>Family history of BP?</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="field-container">
+                        <label for="patient"><span class="material-icons-round field-icon">local_hospital</span> Diagnosed Patient?</label>
+                        <select id="patient" name="patient" required>
+                            <option value="" disabled selected>Currently diagnosed?</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="field-container">
+                        <label for="take_medication"><span class="material-icons-round field-icon">medication</span> Taking Medication?</label>
+                        <select id="take_medication" name="take_medication" required>
+                            <option value="" disabled selected>Currently on medication?</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="field-container">
+                        <label for="when_diagnosed"><span class="material-icons-round field-icon">schedule</span> When Diagnosed</label>
+                        <select id="when_diagnosed" name="when_diagnosed" required>
+                            <option value="" disabled selected>Duration since diagnosis</option>
+                            <option value="<1 Year">Less than 1 Year</option>
+                            <option value="1 - 5 Years">1 – 5 Years</option>
+                            <option value=">5 Years">More than 5 Years</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Row 3: Symptoms -->
+                <div class="form-section-title">
+                    <span class="material-icons-round">healing</span> Symptoms & Severity
+                </div>
+                <div class="input-grid">
+                    <div class="field-container">
+                        <label for="severity"><span class="material-icons-round field-icon">speed</span> Condition Severity</label>
+                        <select id="severity" name="severity" required>
+                            <option value="" disabled selected>Select severity</option>
+                            <option value="Mild">Mild</option>
+                            <option value="Moderate">Moderate</option>
+                            <option value="Severe">Severe</option>
+                        </select>
+                    </div>
+                    <div class="field-container">
+                        <label for="breath_shortness"><span class="material-icons-round field-icon">air</span> Shortness of Breath?</label>
+                        <select id="breath_shortness" name="breath_shortness" required>
+                            <option value="" disabled selected>Experience breathlessness?</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="field-container">
+                        <label for="visual_changes"><span class="material-icons-round field-icon">visibility</span> Visual Changes?</label>
+                        <select id="visual_changes" name="visual_changes" required>
+                            <option value="" disabled selected>Vision disturbances?</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="field-container">
+                        <label for="nose_bleeding"><span class="material-icons-round field-icon">bloodtype</span> Nose Bleeding?</label>
+                        <select id="nose_bleeding" name="nose_bleeding" required>
+                            <option value="" disabled selected>Epistaxis present?</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Row 4: BP & Lifestyle -->
+                <div class="form-section-title">
+                    <span class="material-icons-round">favorite</span> Blood Pressure & Lifestyle
+                </div>
+                <div class="input-grid">
+                    <div class="field-container">
+                        <label for="systolic"><span class="material-icons-round field-icon">trending_up</span> Systolic BP Range</label>
+                        <select id="systolic" name="systolic" required>
+                            <option value="" disabled selected>Select range (mmHg)</option>
+                            <option value="100+">100+ (Below Normal)</option>
+                            <option value="111 - 120">111 – 120 (Elevated)</option>
+                            <option value="121 - 130">121 – 130 (High Stage 1)</option>
+                            <option value="130+">130+ (High Stage 2)</option>
+                        </select>
+                        <span class="helper-text">Normal: below 120 mmHg</span>
+                    </div>
+                    <div class="field-container">
+                        <label for="diastolic"><span class="material-icons-round field-icon">trending_down</span> Diastolic BP Range</label>
+                        <select id="diastolic" name="diastolic" required>
+                            <option value="" disabled selected>Select range (mmHg)</option>
+                            <option value="70 - 80">70 – 80 (Normal)</option>
+                            <option value="81 - 90">81 – 90 (Elevated)</option>
+                            <option value="91 - 100">91 – 100 (High Stage 1)</option>
+                            <option value="100+">100+ (High Stage 2)</option>
+                            <option value="130+">130+ (Crisis)</option>
+                        </select>
+                        <span class="helper-text">Normal: below 80 mmHg</span>
+                    </div>
+                    <div class="field-container">
+                        <label for="controlled_diet"><span class="material-icons-round field-icon">restaurant</span> Controlled Diet?</label>
+                        <select id="controlled_diet" name="controlled_diet" required>
+                            <option value="" disabled selected>Following dietary plan?</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="action-segment">
+                    <button type="submit" class="analyze-btn">
+                        <span class="material-icons-round">biotech</span>
+                        Analyze & Predict Stage
+                        <span class="material-icons-round arrow">arrow_forward</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- ─── Results Section ─── -->
+            {% if predicted_stage %}
+            <div class="results-section" id="resultsSection">
+                <div class="risk-score-card display-{{ stage_info.class }}">
+                    <div class="risk-ring-container">
+                        <svg class="risk-ring" viewBox="0 0 120 120">
+                            <circle class="ring-bg" cx="60" cy="60" r="52"/>
+                            <circle class="ring-fill ring-{{ stage_info.class }}" cx="60" cy="60" r="52"
+                                    stroke-dasharray="{{ (confidence / 100) * 327 }} 327"/>
+                        </svg>
+                        <div class="risk-ring-text">
+                            <span class="risk-pct" data-color="{{ stage_info.color }}">{{ confidence }}%</span>
+                        </div>
+                    </div>
+                    <div class="risk-info">
+                        <span class="risk-badge badge-{{ stage_info.class }}">{{ stage_info.emoji }} {{ stage_info.label }}</span>
+                        <h3>{{ predicted_stage }}</h3>
+                        <p>Model confidence: {{ confidence }}%</p>
+                    </div>
+                </div>
+
+                <!-- Probability Breakdown -->
+                {% if prob_breakdown %}
+                <div class="prob-breakdown">
+                    <h4><span class="material-icons-round">analytics</span> Stage Probabilities</h4>
+                    <div class="prob-bars">
+                        {% for pb in prob_breakdown %}
+                        <div class="prob-bar-item">
+                            <div class="prob-label">
+                                <span>{{ pb.name }}</span>
+                                <span class="prob-pct">{{ pb.pct }}%</span>
+                            </div>
+                            <div class="prob-bar-track">
+                                <div class="prob-bar-fill bar-{{ pb.class }}" data-width="{{ pb.pct }}"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- SHAP -->
+                {% if shap_plot %}
+                <div class="ai-explanation">
+                    <div class="ai-header">
+                        <span class="material-icons-round">psychology</span>
+                        <h4>AI Explanation — Why this prediction?</h4>
+                    </div>
+                    {% if shap_summary %}
+                    <div class="shap-summary">
+                        <span class="material-icons-round">tips_and_updates</span>
+                        <p>{{ shap_summary }}</p>
+                    </div>
+                    {% endif %}
+                    <div class="shap-chart-container">
+                        <img class="shap-img" src="{{ url_for('static', filename='shap_plots/' + shap_plot) }}" alt="SHAP Feature Contributions">
+                    </div>
+                    <div class="shap-legend">
+                        <span class="legend-item"><span class="dot dot-red"></span> Increases risk</span>
+                        <span class="legend-item"><span class="dot dot-green"></span> Decreases risk</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    {% if history_id %}
+                    <a href="{{ url_for('download_pdf', pred_id=history_id) }}" class="action-btn btn-pdf">
+                        <span class="material-icons-round">picture_as_pdf</span> Download Report
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('home') }}" class="action-btn btn-retest">
+                        <span class="material-icons-round">refresh</span> New Analysis
+                    </a>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('dashboard') }}" class="action-btn btn-dash">
+                        <span class="material-icons-round">dashboard</span> View Dashboard
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if error %}
+            <div class="outcome-box display-error">
+                <div class="outcome-icon">
+                    <span class="material-icons-round">warning</span>
+                </div>
+                <div class="outcome-texts">
+                    <h3>Processing Error</h3>
+                    <p>{{ error }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('predictForm').addEventListener('submit', function() {
+            document.getElementById('loadingOverlay').classList.add('active');
+        });
+
+        window.addEventListener('load', function() {
+            var el = document.getElementById('resultsSection');
+            if (el) {
+                setTimeout(function() { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300);
+            }
+
+            // Apply dynamic styles from data attributes
+            document.querySelectorAll('[data-color]').forEach(function(node) {
+                node.style.color = node.getAttribute('data-color');
+            });
+            document.querySelectorAll('[data-width]').forEach(function(node) {
+                node.style.width = node.getAttribute('data-width') + '%';
+            });
+        });
+    </script>
+</body>
+</html>
