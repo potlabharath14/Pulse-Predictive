@@ -196,7 +196,7 @@ Real clinical patient data with **1825 records** and **14 columns**:
 | Collection | Purpose |
 |---|---|
 | `users` | User accounts (username, hashed password, created_at) |
-| `predictions` | All prediction records with inputs, results, SHAP data |
+| `records` | All prediction records with inputs, results, recommendations, SHAP data |
 | `reports` | Generated PDF report metadata + GridFS file references |
 | `fs.files` / `fs.chunks` | GridFS binary storage for SHAP plots and PDF files |
 

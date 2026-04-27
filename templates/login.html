@@ -15,10 +15,10 @@
             <span class="nav-brand">Pulse Predictive</span>
         </div>
         <div class="nav-links">
-            <a href="{{ url_for('home') }}" class="nav-link">
+            <a href="{{ url_for('prediction.home') }}" class="nav-link">
                 <span class="material-icons-round">home</span> Home
             </a>
-            <a href="{{ url_for('register') }}" class="nav-link nav-cta">
+            <a href="{{ url_for('auth.register') }}" class="nav-link nav-cta">
                 <span class="material-icons-round">person_add</span> Register
             </a>
         </div>
@@ -49,7 +49,7 @@
                 <p>Sign in to access your health dashboard</p>
             </div>
 
-            <form action="{{ url_for('login') }}" method="POST">
+            <form action="{{ url_for('auth.login') }}" method="POST">
                 <div class="field-container" style="margin-bottom: 1.5rem;">
                     <label for="username"><span class="material-icons-round field-icon">person</span> Username</label>
                     <input type="text" id="username" name="username" placeholder="Enter username" required>
@@ -66,7 +66,7 @@
                     </button>
                 </div>
                 <div class="auth-switch">
-                    Don't have an account? <a href="{{ url_for('register') }}">Create one</a>
+                    Don't have an account? <a href="{{ url_for('auth.register') }}">Create one</a>
                 </div>
             </form>
         </div>

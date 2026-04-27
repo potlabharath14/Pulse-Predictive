@@ -16,13 +16,13 @@
             <span class="nav-brand">Pulse Predictive</span>
         </div>
         <div class="nav-links">
-            <a href="{{ url_for('home') }}" class="nav-link">
+            <a href="{{ url_for('prediction.home') }}" class="nav-link">
                 <span class="material-icons-round">home</span> Home
             </a>
-            <a href="{{ url_for('dashboard') }}" class="nav-link active">
+            <a href="{{ url_for('prediction.dashboard') }}" class="nav-link active">
                 <span class="material-icons-round">dashboard</span> Dashboard
             </a>
-            <a href="{{ url_for('logout') }}" class="nav-link nav-user">
+            <a href="{{ url_for('auth.logout') }}" class="nav-link nav-user">
                 <span class="material-icons-round">account_circle</span> {{ current_user.username }}
             </a>
         </div>
@@ -91,7 +91,7 @@
             <span class="material-icons-round empty-icon">science</span>
             <h3>No predictions yet</h3>
             <p>Head to the home page and run your first analysis!</p>
-            <a href="{{ url_for('home') }}" class="action-btn btn-retest" style="margin-top:1rem;">
+            <a href="{{ url_for('prediction.home') }}" class="action-btn btn-retest" style="margin-top:1rem;">
                 <span class="material-icons-round">add</span> New Prediction
             </a>
         </div>
@@ -124,10 +124,10 @@
                     </div>
                 </div>
                 <div class="hcard-actions">
-                    <a href="{{ url_for('download_pdf', pred_id=item._id|string) }}" class="action-btn btn-pdf btn-sm">
+                    <a href="{{ url_for('prediction.download_pdf', pred_id=item._id|string) }}" class="action-btn btn-pdf btn-sm">
                         <span class="material-icons-round">picture_as_pdf</span> Report
                     </a>
-                    <a href="{{ url_for('delete_prediction', pred_id=item._id|string) }}" class="action-btn btn-delete btn-sm" onclick="return confirm('Delete this prediction?')">
+                    <a href="{{ url_for('prediction.delete_prediction', pred_id=item._id|string) }}" class="action-btn btn-delete btn-sm" onclick="return confirm('Delete this prediction?')">
                         <span class="material-icons-round">delete</span> Delete
                     </a>
                 </div>
@@ -139,7 +139,7 @@
 
     {% if history|length > 0 %}
     <script>
-        fetch('{{ url_for("chart_data") }}')
+        fetch('{{ url_for('prediction.chart_data') }}')
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 // Confidence Trend
